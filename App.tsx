@@ -134,6 +134,30 @@ const Login = ({ onLogin }: { onLogin: (role: UserRole) => void }) => {
   );
 };
 
+interface ProtectedRouteProps {
+  children: React.ReactNode;
+  requiredRole?: UserRole;
+  isAuthenticated: boolean;
+  userRole: UserRole;
+}
+
+// Protected Route Wrapper
+const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ 
+  children, 
+  requiredRole, 
+  isAuthenticated, 
+  userRole 
+}) => {
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
+  if (requiredRole && userRole !== requiredRole) {
+    // If admin, allow access to all for demo purposes, or redirect to own dashboard
+    return <Navigate to={`/portal/${userRole.toLowerCase()}`} replace />;
+  }
+  return <>{children}</>;
+};
+
 // --- Main App Component ---
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -147,18 +171,6 @@ function App() {
   const handleLogout = () => {
     setIsAuthenticated(false);
     setUserRole(UserRole.GUEST);
-  };
-
-  // Protected Route Wrapper
-  const ProtectedRoute = ({ children, requiredRole }: { children: React.ReactNode, requiredRole?: UserRole }) => {
-    if (!isAuthenticated) {
-      return <Navigate to="/login" replace />;
-    }
-    if (requiredRole && userRole !== requiredRole) {
-      // If admin, allow access to all for demo purposes, or redirect to own dashboard
-      return <Navigate to={`/portal/${userRole.toLowerCase()}`} replace />;
-    }
-    return <>{children}</>;
   };
 
   return (
@@ -178,7 +190,11 @@ function App() {
           <Route 
             path="/portal/admin/*" 
             element={
-              <ProtectedRoute requiredRole={UserRole.ADMIN}>
+              <ProtectedRoute 
+                isAuthenticated={isAuthenticated}
+                userRole={userRole}
+                requiredRole={UserRole.ADMIN}
+              >
                 <PortalLayout role={UserRole.ADMIN} onLogout={handleLogout}>
                   <AdminDashboard />
                 </PortalLayout>
@@ -188,7 +204,11 @@ function App() {
           <Route 
             path="/portal/student/*" 
             element={
-              <ProtectedRoute requiredRole={UserRole.STUDENT}>
+              <ProtectedRoute 
+                isAuthenticated={isAuthenticated}
+                userRole={userRole}
+                requiredRole={UserRole.STUDENT}
+              >
                 <PortalLayout role={UserRole.STUDENT} onLogout={handleLogout}>
                   <StudentDashboard />
                 </PortalLayout>
@@ -198,7 +218,11 @@ function App() {
           <Route 
             path="/portal/teacher/*" 
             element={
-              <ProtectedRoute requiredRole={UserRole.TEACHER}>
+              <ProtectedRoute 
+                isAuthenticated={isAuthenticated}
+                userRole={userRole}
+                requiredRole={UserRole.TEACHER}
+              >
                 <PortalLayout role={UserRole.TEACHER} onLogout={handleLogout}>
                   <TeacherDashboard />
                 </PortalLayout>
